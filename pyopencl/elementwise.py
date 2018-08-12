@@ -246,6 +246,10 @@ class ElementwiseKernel:
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
         capture_as = kwargs.pop("capture_as", None)
+        queue = kwargs.pop("queue", None)
+        wait_for = kwargs.pop("wait_for", None)
+        if wait_for is None:
+            wait_for = []
 
         use_range = range_ is not None or slice_ is not None
         kernel, arg_descrs = self.get_kernel(use_range)
@@ -265,13 +269,12 @@ class ElementwiseKernel:
                 invocation_args.append(arg.base_data)
                 if arg_descr.with_offset:
                     invocation_args.append(arg.offset)
+                wait_for = wait_for + arg.events
             else:
                 invocation_args.append(arg)
 
         # }}}
 
-        queue = kwargs.pop("queue", None)
-        wait_for = kwargs.pop("wait_for", None)
         if kwargs:
             raise TypeError("unknown keyword arguments: '%s'"
                     % ", ".join(kwargs))

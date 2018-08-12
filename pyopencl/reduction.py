@@ -303,6 +303,8 @@ class ReductionKernel:
         wait_for = kwargs.pop("wait_for", None)
         return_event = kwargs.pop("return_event", False)
         out = kwargs.pop("out", None)
+        if wait_for is None:
+            wait_for = []
 
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
@@ -325,6 +327,7 @@ class ReductionKernel:
 
                     vectors.append(arg)
                     invocation_args.append(arg.base_data)
+                    wait_for = wait_for + arg.events
                     if arg_tp.with_offset:
                         invocation_args.append(arg.offset)
                 else:
@@ -395,6 +398,7 @@ class ReductionKernel:
 
             if group_count == 1 and out is not None:
                 result = out
+                wait_for = wait_for + result.events
             elif group_count == 1:
                 result = empty(use_queue,
                         (), self.dtype_out,
@@ -414,6 +418,7 @@ class ReductionKernel:
             wait_for = [last_evt]
 
             if group_count == 1:
+                result.add_event(last_evt)
                 if return_event:
                     return result, last_evt
                 else:

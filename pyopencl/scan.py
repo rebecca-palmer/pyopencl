@@ -1448,6 +1448,8 @@ class GenericScanKernel(_GenericScanKernelBase):
         queue = kwargs.get("queue")
         n = kwargs.get("size")
         wait_for = kwargs.get("wait_for")
+        if wait_for is None:
+            wait_for = []
 
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
@@ -1469,6 +1471,7 @@ class GenericScanKernel(_GenericScanKernelBase):
         for arg_descr, arg_val in zip(self.parsed_args, args):
             if isinstance(arg_descr, VectorArg):
                 data_args.append(arg_val.data)
+                wait_for = wait_for + arg_val.events
             else:
                 data_args.append(arg_val)
 
@@ -1653,6 +1656,8 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         queue = kwargs.get("queue")
         n = kwargs.get("size")
         wait_for = kwargs.get("wait_for")
+        if wait_for is None:
+            wait_for = []
 
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
@@ -1674,6 +1679,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         for arg_descr, arg_val in zip(self.parsed_args, args):
             if isinstance(arg_descr, VectorArg):
                 data_args.append(arg_val.data)
+                wait_for = wait_for + arg_val.events
             else:
                 data_args.append(arg_val)
 
@@ -1724,8 +1730,9 @@ class _LegacyScanKernelBase(GenericScanKernel):
         if not n:
             return output_ary
 
-        GenericScanKernel.__call__(self,
+        event1 = GenericScanKernel.__call__(self,
                 input_ary, output_ary, allocator=allocator, queue=queue)
+        output_ary.add_event(event1)
 
         return output_ary
 

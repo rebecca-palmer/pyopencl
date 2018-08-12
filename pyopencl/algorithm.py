@@ -107,6 +107,8 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     # **dict is a Py2.5 workaround
     evt = knl(ary, out, count, *extra_args_values,
             **dict(queue=queue, wait_for=wait_for))
+    out.add_event(evt)
+    count.add_event(evt)
 
     return out, count, evt
 
@@ -192,6 +194,9 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     # **dict is a Py2.5 workaround
     evt = knl(ary, out_true, out_false, count, *extra_args_values,
             **dict(queue=queue, wait_for=wait_for))
+    out_true.add_event(evt)
+    out_false.add_event(evt)
+    count.add_event(evt)
 
     return out_true, out_false, count, evt
 
@@ -259,6 +264,8 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
     # **dict is a Py2.5 workaround
     evt = knl(ary, out, count, *extra_args_values,
             **dict(queue=queue, wait_for=wait_for))
+    out.add_event(evt)
+    count.add_event(evt)
 
     return out, count, evt
 
@@ -551,6 +558,9 @@ class RadixSort(object):
 
             base_bit += self.bits
 
+        for arg_descr, arg_val in zip(self.arguments, args):
+            if arg_descr.name in self.sort_arg_names:
+                arg_val.add_event(last_evt)
         return [arg_val
                 for arg_descr, arg_val in zip(self.arguments, args)
                 if arg_descr.name in self.sort_arg_names], last_evt
@@ -1356,14 +1366,14 @@ class KeyValueSorter(object):
 
         starts = (cl.array.empty(queue, (nkeys+1), starts_dtype, allocator=allocator)
                 .fill(len(values_sorted_by_key), wait_for=[evt]))
-        evt, = starts.events
 
         evt = knl_info.start_finder(starts, keys_sorted_by_key,
                 range=slice(len(keys_sorted_by_key)),
-                wait_for=[evt])
+                wait_for=starts.events)
 
         evt = knl_info.bound_propagation_scan(starts, nkeys,
                 queue=queue, wait_for=[evt])
+        starts.add_event(evt)
 
         return starts, values_sorted_by_key, evt
 

@@ -95,6 +95,8 @@ class BitonicSort(object):
         if wait_for is None:
             wait_for = []
         wait_for = wait_for + arr.events
+        if idx is not None:
+            wait_for = wait_for + idx.events
 
         last_evt = cl.enqueue_marker(queue, wait_for=wait_for)
 
@@ -141,6 +143,7 @@ class BitonicSort(object):
             for knl, nt, wg, _ in run_queue[1:]:
                 last_evt = knl(queue, (nt,), wg, arr.data, wait_for=[last_evt])
 
+        arr.add_event(last_evt)
         return arr, last_evt
 
     @memoize_method

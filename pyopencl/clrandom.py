@@ -649,7 +649,7 @@ class Random123GeneratorBase(object):
         from pyopencl.array import splay
         gsize, lsize = splay(queue, ary.size)
 
-        evt = knl(queue, gsize, lsize, *args)
+        evt = knl(queue, gsize, lsize, *args, wait_for=ary.events)
 
         self.counter[0] += n * counter_multiplier
         c1_incr, self.counter[0] = divmod(self.counter[0], self.counter_max)
@@ -658,6 +658,7 @@ class Random123GeneratorBase(object):
             c2_incr, self.counter[1] = divmod(self.counter[1], self.counter_max)
             self.counter[2] += c2_incr
 
+        ary.add_event(evt)
         return evt
 
     def fill_uniform(self, ary, a=0, b=1, queue=None):
@@ -672,8 +673,7 @@ class Random123GeneratorBase(object):
 
         result = cl_array.empty(*args, **kwargs)
 
-        result.add_event(
-                self.fill_uniform(result, queue=result.queue, a=a, b=b))
+        self.fill_uniform(result, queue=result.queue, a=a, b=b)
         return result
 
     def fill_normal(self, ary, mu=0, sigma=1, queue=None):
@@ -691,8 +691,7 @@ class Random123GeneratorBase(object):
 
         result = cl_array.empty(*args, **kwargs)
 
-        result.add_event(
-                self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma))
+        self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma)
         return result
 
 
@@ -751,8 +750,7 @@ def rand(queue, shape, dtype, luxury=None, a=0, b=1):
     from pyopencl.array import Array
     gen = _get_generator(queue.context)
     result = Array(queue, shape, dtype)
-    result.add_event(
-            gen.fill_uniform(result, a=a, b=b))
+    gen.fill_uniform(result, a=a, b=b)
     return result
 
 

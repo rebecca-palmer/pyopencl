@@ -412,7 +412,11 @@ def test_struct_reduce(ctx_factory):
     pytest.importorskip("mako")
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     dev, = context.devices
     if (dev.vendor == "NVIDIA" and dev.platform.vendor == "Apple"
@@ -574,7 +578,11 @@ def test_copy_if(ctx_factory):
     importorskip("mako")
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
     for n in scan_test_counts:
@@ -598,7 +606,11 @@ def test_partition(ctx_factory):
     importorskip("mako")
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
     for n in scan_test_counts:
@@ -626,7 +638,11 @@ def test_unique(ctx_factory):
     importorskip("mako")
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
     for n in scan_test_counts:
@@ -783,7 +799,11 @@ def test_sort(ctx_factory, scan_kernel):
     importorskip("mako")
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     dtype = np.int32
 
@@ -899,7 +919,11 @@ def test_key_value_sorter(ctx_factory):
     importorskip("mako")
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     n = 10**5
     nkeys = 2000
@@ -942,7 +966,11 @@ def test_key_value_sorter(ctx_factory):
 @pytest.mark.bitonic
 def test_bitonic_sort(ctx_factory, size, dtype):
     ctx = cl.create_some_context()
-    queue = cl.CommandQueue(ctx)
+    try:
+        queue = cl.CommandQueue(ctx,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(ctx)
 
     dev = ctx.devices[0]
     if (dev.platform.name == "Apple" and dev.type & cl.device_type.CPU):
@@ -994,7 +1022,11 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
                 "on zero-sized arrays very well")
 
     ctx = cl.create_some_context()
-    queue = cl.CommandQueue(ctx)
+    try:
+        queue = cl.CommandQueue(ctx,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(ctx)
 
     dev = ctx.devices[0]
     if (dev.platform.name == "Portable Computing Language"
