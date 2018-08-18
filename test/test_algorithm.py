@@ -47,7 +47,11 @@ from pyopencl.characterize import get_pocl_version
 
 def test_elwise_kernel(ctx_factory):
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
 
@@ -71,7 +75,11 @@ def test_elwise_kernel_with_options(ctx_factory):
     from pyopencl.elementwise import ElementwiseKernel
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     in_gpu = clrand(queue, (50,), np.float32)
 
@@ -99,7 +107,11 @@ def test_elwise_kernel_with_options(ctx_factory):
 
 def test_ranged_elwise_kernel(ctx_factory):
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     from pyopencl.elementwise import ElementwiseKernel
     set_to_seven = ElementwiseKernel(context,
@@ -545,7 +557,11 @@ def test_scan(ctx_factory, dtype, scan_cls):
     importorskip("mako")
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     knl = scan_cls(context, dtype, "a+b", "0")
 
@@ -701,7 +717,11 @@ def test_segmented_scan(ctx_factory):
     importorskip("mako")
 
     context = ctx_factory()
-    queue = cl.CommandQueue(context)
+    try:
+        queue = cl.CommandQueue(context,
+               properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        queue = cl.CommandQueue(context)
 
     from pyopencl.tools import dtype_to_ctype
     dtype = np.int32

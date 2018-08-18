@@ -1467,11 +1467,17 @@ class GenericScanKernel(_GenericScanKernelBase):
             return cl.enqueue_marker(queue, wait_for=wait_for)
 
         data_args = []
+        # for later .add_event()
+        # Currently all Arrays because we can't tell which ones are
+        # really outputs; this may change (e.g. recognizing 'const'
+        # as non-output)
+        output_args = []
         from pyopencl.tools import VectorArg
         for arg_descr, arg_val in zip(self.parsed_args, args):
             if isinstance(arg_descr, VectorArg):
                 data_args.append(arg_val.data)
                 wait_for = wait_for + arg_val.events
+                output_args.append(arg_val)
             else:
                 data_args.append(arg_val)
 
@@ -1555,10 +1561,13 @@ class GenericScanKernel(_GenericScanKernelBase):
         if self.store_segment_start_flags:
             upd_args.append(segment_start_flags.data)
 
-        return self.final_update_info.kernel(
+        event3 = self.final_update_info.kernel(
                 queue, (num_intervals,),
                 (self.final_update_info.update_wg_size,),
                 *upd_args, **dict(g_times_l=True, wait_for=[l2_evt]))
+        for arg in output_args:
+            arg.add_event(event3)
+        return event3
 
         # }}}
 
@@ -1675,18 +1684,27 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
                 allocator=allocator)
 
         data_args = [scan_tmp.data]
+        # for later .add_event()
+        # Currently all Arrays because we can't tell which ones are
+        # really outputs; this may change (e.g. recognizing 'const'
+        # as non-output)
+        output_args = []
         from pyopencl.tools import VectorArg
         for arg_descr, arg_val in zip(self.parsed_args, args):
             if isinstance(arg_descr, VectorArg):
                 data_args.append(arg_val.data)
                 wait_for = wait_for + arg_val.events
+                output_args.append(arg_val)
             else:
                 data_args.append(arg_val)
 
         # }}}
 
-        return self.kernel(queue, (1,), (1,),
+        event1 = self.kernel(queue, (1,), (1,),
                 *(data_args + [n]), **dict(wait_for=wait_for))
+        for arg in output_args:
+            arg.add_event(event1)
+        return event1
 
 # }}}
 

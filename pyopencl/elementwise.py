@@ -257,6 +257,11 @@ class ElementwiseKernel:
         # {{{ assemble arg array
 
         invocation_args = []
+        # for later .add_event()
+        # Currently all Arrays because we can't tell which ones are
+        # really outputs; this may change (e.g. recognizing 'const'
+        # as non-output)
+        output_args = []
         for arg, arg_descr in zip(args, arg_descrs):
             if isinstance(arg_descr, VectorArg):
                 if not arg.flags.forc:
@@ -270,6 +275,7 @@ class ElementwiseKernel:
                 if arg_descr.with_offset:
                     invocation_args.append(arg.offset)
                 wait_for = wait_for + arg.events
+                output_args.append(arg)
             else:
                 invocation_args.append(arg)
 
@@ -321,8 +327,11 @@ class ElementwiseKernel:
                     gs, ls, *invocation_args, wait_for=wait_for)
 
         kernel.set_args(*invocation_args)
-        return cl.enqueue_nd_range_kernel(queue, kernel,
+        event1 = cl.enqueue_nd_range_kernel(queue, kernel,
                 gs, ls, wait_for=wait_for)
+        for arg in output_args:
+            arg.add_event(event1)
+        return event1
 
 # }}}
 
