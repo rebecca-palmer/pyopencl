@@ -1073,6 +1073,14 @@ class ListOfListsBuilder:
 
             *event* is a :class:`pyopencl.Event` for dependency management.
 
+        .. note::
+
+            As this operation takes bare :class:`Buffer` inputs not
+            :class:`pyopencl.array.Array` inputs, it bypasses Array's usual
+            automatic :class:`Event` management.  If it is used in an out-of-order
+            queue, the user must correctly set *wait_for* and wait on the returned
+            :class:`Event`.
+
         .. versionchanged:: 2016.2
 
             Added omit_lists.

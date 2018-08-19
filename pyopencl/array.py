@@ -375,6 +375,15 @@ class Array(object):
 
     .. versionadded:: 2014.1.1
 
+    .. versionchanged:: 2018.2
+
+        All PyOpenCL operations on Arrays (except accessing
+        the underlying buffer with :attr:`Array.data` or
+        :attr:`Array.base_data`) should now automatically
+        check and/or update :attr:`Array.events` as needed.  Hence, using
+        Arrays in an out-of-order queue now should just work, without any
+        manual event management; if it does not, please report a bug.
+
     .. attribute:: events
 
         A list of :class:`pyopencl.Event` instances that the current content of

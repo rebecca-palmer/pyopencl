@@ -207,7 +207,7 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
-Version 2017.2
+Version 2018.2
 --------------
 
 .. note::

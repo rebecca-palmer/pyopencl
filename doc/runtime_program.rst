@@ -172,6 +172,15 @@ Kernel
         * An instance of :class:`LocalMemory`.
         * An instance of :class:`Sampler`.
 
+        :class:`pyopencl.array.Array` is *not* directly accepted.
+        :attr:`Array.data` is accepted, but bypasses :class:`Array`'s
+        automatic :class:`Event` handling.  Consider using
+        :mod:`pyopencl.elementwise`, etc. instead.
+
+        Like its C-level equivalent, :meth:`set_arg` does *not* increment
+        *arg*'s reference count.  User code must keep a reference to *arg*
+        until it has finished using the kernel with this argument value.
+
     .. method:: set_args(self, *args)
 
         Invoke :meth:`set_arg` on each element of *args* in turn.
