@@ -33,6 +33,7 @@ import warnings
 import numpy as np
 import sys
 import re
+import weakref
 
 from pytools import memoize_method
 
@@ -1719,6 +1720,9 @@ class Kernel(_Common):
                 work_around_arg_count_bug=None)
 
         self._wg_info_cache = {}
+        # Only set for _CLKernelArg arguments, None for others:
+        # see enqueue_nd_range_kernel
+        self._arg_weakrefs = [None] * self.num_args
         return self
 
     def set_scalar_arg_dtypes(self, scalar_arg_dtypes):
@@ -1772,6 +1776,7 @@ class Kernel(_Common):
                 *args, **kwargs)
 
     def _set_arg_clkernelarg(self, arg_index, arg):
+        self._arg_weakrefs[arg_index] = weakref.ref(arg)
         if isinstance(arg, MemoryObjectHolder):
             _handle_error(_lib.kernel__set_arg_mem(self.ptr, arg_index, arg.ptr))
         elif isinstance(arg, SVM):
@@ -1791,6 +1796,7 @@ class Kernel(_Common):
 
     def set_arg(self, arg_index, arg):
         # If you change this, also change the kernel call generation logic.
+        self._arg_weakrefs[arg_index] = None
         if arg is None:
             _handle_error(_lib.kernel__set_arg_null(self.ptr, arg_index))
         elif isinstance(arg, _CLKernelArg):
@@ -1946,11 +1952,24 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
         local_work_size = _ffi.NULL
 
     ptr_event = _ffi.new('clobj_t*')
+    # The NannyEvent prevents arguments being freed (in particular,
+    # MemoryPool-using arguments being returned to the pool and re-used
+    # for a different array, which requires a Python-level reference
+    # not just an OpenCL-level reference) while the kernel is running
+    # https://github.com/inducer/pyopencl/pull/237
+    arg_refs = [True if aref is None else aref()
+            for aref in kernel._arg_weakrefs]
+    if any(aref is None for aref in arg_refs):
+        raise RuntimeError("kernel argument(s) {} (1-based) have been deleted"
+                .format([(arg_idx + 1) for arg_idx in range(len(arg_refs))
+                if arg_refs[arg_idx] is None]), status_code.INVALID_MEM_OBJECT,
+                "enqueue_nd_range_kernel")
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_nd_range_kernel(
         ptr_event, queue.ptr, kernel.ptr, work_dim, c_global_work_offset,
-        global_work_size, local_work_size, c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
+        global_work_size, local_work_size, c_wait_for, num_wait_for,
+        NannyEvent._handle(arg_refs)))
+    return NannyEvent._create(ptr_event[0])
 
 # }}}
 

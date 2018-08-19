@@ -293,6 +293,7 @@ def add_local_imports(gen):
     gen(
         "from pyopencl.cffi_cl import _lib, "
         "_ffi, _handle_error, _CLKernelArg")
+    gen("import weakref")
     gen("")
 
 
@@ -334,6 +335,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
     with Indentation(gen):
         add_local_imports(gen)
+        gen("self._arg_weakrefs = [None] * self.num_args")
         gen.extend(err_handler)
 
         gen("""
@@ -351,6 +353,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
     with Indentation(gen):
         add_local_imports(gen)
+        gen("self._arg_weakrefs = [None] * self.num_args")
         gen.extend(err_handler)
 
     # }}}

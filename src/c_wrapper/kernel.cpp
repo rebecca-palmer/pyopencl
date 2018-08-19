@@ -187,7 +187,8 @@ enqueue_nd_range_kernel(clobj_t *evt, clobj_t _queue, clobj_t _knl,
                         cl_uint work_dim, const size_t *global_work_offset,
                         const size_t *global_work_size,
                         const size_t *local_work_size,
-                        const clobj_t *_wait_for, uint32_t num_wait_for)
+                        const clobj_t *_wait_for, uint32_t num_wait_for,
+                        void *pyobj)
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto knl = static_cast<kernel*>(_knl);
@@ -195,7 +196,8 @@ enqueue_nd_range_kernel(clobj_t *evt, clobj_t _queue, clobj_t _knl,
     return c_handle_retry_mem_error([&] {
             pyopencl_call_guarded(clEnqueueNDRangeKernel, queue, knl, work_dim,
                                   global_work_offset, global_work_size,
-                                  local_work_size, wait_for, event_out(evt));
+                                  local_work_size, wait_for,
+                                  nanny_event_out(evt, pyobj));
         });
 }
 
