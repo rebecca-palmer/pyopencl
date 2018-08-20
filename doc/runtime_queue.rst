@@ -114,14 +114,22 @@ Event Subclasses
 
 .. class:: NannyEvent
 
-    Transfers between host and device return events of this type. They hold
-    a reference to the host-side buffer and wait for the transfer to complete
-    when they are freed. Therefore, they can safely release the reference to
-    the object they're guarding upon destruction.
+    Creates a reference to a Python object that is held until the operation
+    completes (even if the NannyEvent object is freed first), then released.
+    Used to make sure objects being read or written by OpenCL operations are
+    not freed during those operations.
 
     A subclass of :class:`Event`.
 
     .. versionadded:: 2011.2
+
+    .. versionchanged:: 2018.2
+
+        To save memory, the guarded object may be freed as soon as the
+        NannyEvent enters :attr:`command_execution_status.COMPLETE`, rather
+        than waiting for it to be destroyed or explicitly
+        :meth:`NannyEvent.wait()`ed for.
+        :meth:`NannyEvent.get_ward()` returns None after this.
 
     .. method:: get_ward()
 

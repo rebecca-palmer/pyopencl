@@ -16,7 +16,7 @@ class event_private {
     virtual void finish() noexcept = 0;
 public:
     event_private()
-        : m_finished(false)
+        : m_finished(false), release_callback_set(false), outer_deleted(false)
     {}
     virtual
     ~event_private()
@@ -33,6 +33,8 @@ public:
     {
         return m_finished;
     }
+    std::atomic_bool release_callback_set;
+    std::atomic_bool outer_deleted;
 };
 
 event::event(cl_event event, bool retain, event_private *p)
@@ -42,65 +44,71 @@ event::event(cl_event event, bool retain, event_private *p)
         try {
             pyopencl_call_guarded(clRetainEvent, PYOPENCL_CL_CASTABLE_THIS);
         } catch (...) {
-            m_p->call_finish();
-            delete m_p;
-            throw;
+            if (p) {
+                m_p = nullptr;
+                p->call_finish();
+                delete p;
+                throw;
+            }
+        }
+    }
+    // To save memory (nanny_event ward may refer to a large object),
+    // use a callback to release immediately on completion if possible
+    if (m_p) {
+        try {
+            // Event Callback may not be run immediately when the event
+            // is already completed.
+            cl_int status = 0;
+            pyopencl_call_guarded(clGetEventInfo, this,
+                          CL_EVENT_COMMAND_EXECUTION_STATUS,
+                          size_arg(status), nullptr);
+            if (status <= CL_COMPLETE) {
+                m_p = nullptr;
+                p->call_finish();
+                delete p;
+                return;
+            }
+#if PYOPENCL_CL_VERSION >= 0x1010 && defined(PYOPENCL_HAVE_EVENT_SET_CALLBACK)
+            cl_context ctx;
+            pyopencl_call_guarded(clGetEventInfo, this, CL_EVENT_CONTEXT,
+                              size_arg(ctx), nullptr);
+            int major;
+            int minor;
+            context::get_version(ctx, &major, &minor);
+            if ((major > 1) || (major >= 1 && minor >= 1)) {
+                event_private *p2 = m_p;
+                m_p->release_callback_set = true;
+                set_callback(CL_COMPLETE, [p2] (cl_int) {
+                    p2->call_finish();
+                    if (p2->outer_deleted) {
+                        delete p2;
+                    } else {
+                        p2->release_callback_set = false;
+                    }
+                });
+            }
+#endif
+        } catch (const clerror &e) {
+            cleanup_print_error(e.code(), e.what());
         }
     }
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1010
-static PYOPENCL_INLINE bool
-release_private_use_cb(event *evt)
-{
-    try {
-        cl_int status = 0;
-        pyopencl_call_guarded(clGetEventInfo, evt,
-                              CL_EVENT_COMMAND_EXECUTION_STATUS,
-                              size_arg(status), nullptr);
-        // Event Callback may not be run immediately when the event
-        // is already completed.
-        if (status <= CL_COMPLETE)
-            return false;
-        cl_context ctx;
-        pyopencl_call_guarded(clGetEventInfo, evt, CL_EVENT_CONTEXT,
-                              size_arg(ctx), nullptr);
-        int major;
-        int minor;
-        context::get_version(ctx, &major, &minor);
-        return (major > 1) || (major >= 1 && minor >= 1);
-    } catch (const clerror &e) {
-        cleanup_print_error(e.code(), e.what());
-        return false;
-    }
-}
-#endif
 
 void
 event::release_private() noexcept
 {
     if (!m_p)
         return;
-    if (m_p->is_finished()) {
+    if (!m_p->release_callback_set) {
+        // Make sure it gets finish()ed if a callback could not be used
+        if (!m_p->is_finished()) {
+            wait();
+        }
         delete m_p;
         return;
     }
-#if PYOPENCL_CL_VERSION >= 0x1010 && defined(PYOPENCL_HAVE_EVENT_SET_CALLBACK)
-    if (release_private_use_cb(this)) {
-        try {
-            event_private *p = m_p;
-            set_callback(CL_COMPLETE, [p] (cl_int) {
-                    p->call_finish();
-                    delete p;
-                });
-            return;
-        } catch (const clerror &e) {
-            cleanup_print_error(e.code(), e.what());
-        }
-    }
-#endif
-    wait();
-    delete m_p;
+    m_p->outer_deleted = true;
 }
 
 event::~event()
