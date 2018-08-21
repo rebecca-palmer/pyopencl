@@ -87,7 +87,8 @@ enqueue_svm_memfill(
     clobj_t *evt, clobj_t _queue,
     void *svm_ptr,
     const void *pattern, size_t pattern_size, size_t size,
-    const clobj_t *_wait_for, uint32_t num_wait_for)
+    const clobj_t *_wait_for, uint32_t num_wait_for,
+    void *pyobj)
 {
 #if PYOPENCL_CL_VERSION >= 0x2000
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
@@ -97,7 +98,7 @@ enqueue_svm_memfill(
             clEnqueueSVMMemFill, queue,
             svm_ptr,
             pattern, pattern_size, size,
-            wait_for, event_out(evt));
+            wait_for, nanny_event_out(evt, pyobj));
         });
 #else
     PYOPENCL_UNSUPPORTED_BEFORE(clEnqueueSVMMemFill, "CL 2.0")
@@ -156,7 +157,7 @@ enqueue_svm_migrate_mem(
     const void **svm_pointers,
     const size_t *sizes,
     cl_mem_migration_flags flags,
-    const clobj_t *_wait_for, uint32_t num_wait_for)
+    const clobj_t *_wait_for, uint32_t num_wait_for, void *pyobj)
 {
 #if PYOPENCL_CL_VERSION >= 0x2010
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
@@ -165,7 +166,7 @@ enqueue_svm_migrate_mem(
         pyopencl_call_guarded(
             clEnqueueSVMMigrateMem, queue,
             num_svm_pointers, svm_pointers, sizes, flags,
-            wait_for, event_out(evt));
+            wait_for, nanny_event_out(evt, pyobj));
         });
 #else
     PYOPENCL_UNSUPPORTED_BEFORE(clEnqueueSVMMigrateMem, "CL 2.1")

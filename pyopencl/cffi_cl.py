@@ -1417,9 +1417,10 @@ def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
     _handle_error(_lib.enqueue_svm_memfill(
         ptr_event, queue.ptr,
         dst_buf, pattern_buf, pattern_size, byte_count,
-        c_wait_for, num_wait_for))
+        c_wait_for, num_wait_for,
+        NannyEvent._handle(dest)))
 
-    return Event._create(ptr_event[0])
+    return NannyEvent._create(ptr_event[0])
 
 
 def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
@@ -1451,9 +1452,10 @@ def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
     _handle_error(_lib.enqueue_svm_memfill(
         ptr_event, queue.ptr,
         len(svms), svm_pointers, sizes, flags,
-        c_wait_for, num_wait_for))
+        c_wait_for, num_wait_for,
+        NannyEvent._handle(svms)))
 
-    return Event._create(ptr_event[0])
+    return NannyEvent._create(ptr_event[0])
 
 # }}}
 
@@ -2028,8 +2030,8 @@ def enqueue_migrate_mem_objects(queue, mem_objects, flags, wait_for=None):
     c_mem_objs, num_mem_objs = _clobj_list(mem_objects)
     _handle_error(_lib.enqueue_migrate_mem_objects(
         _event, queue.ptr, c_mem_objs, num_mem_objs, flags,
-        c_wait_for, num_wait_for))
-    return Event._create(_event[0])
+        c_wait_for, num_wait_for, NannyEvent._handle(mem_objects)))
+    return NannyEvent._create(_event[0])
 
 
 def enqueue_migrate_mem_object_ext(queue, mem_objects, flags, wait_for=None):
@@ -2038,8 +2040,8 @@ def enqueue_migrate_mem_object_ext(queue, mem_objects, flags, wait_for=None):
     c_mem_objs, num_mem_objs = _clobj_list(mem_objects)
     _handle_error(_lib.enqueue_migrate_mem_object_ext(
         _event, queue.ptr, c_mem_objs, num_mem_objs, flags,
-        c_wait_for, num_wait_for))
-    return Event._create(_event[0])
+        c_wait_for, num_wait_for, NannyEvent._handle(mem_objects)))
+    return NannyEvent._create(_event[0])
 
 # }}}
 
@@ -2064,7 +2066,7 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
     _handle_error(_lib.enqueue_read_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
-        NannyEvent._handle(hostbuf)))
+        NannyEvent._handle((hostbuf, mem))))
     return NannyEvent._create(ptr_event[0])
 
 
@@ -2076,7 +2078,7 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
     _handle_error(_lib.enqueue_write_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
-        NannyEvent._handle(hostbuf, c_ref)))
+        NannyEvent._handle((hostbuf, mem, c_ref))))
     return NannyEvent._create(ptr_event[0])
 
 
@@ -2086,8 +2088,9 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_copy_buffer(
         ptr_event, queue.ptr, src.ptr, dst.ptr, byte_count, src_offset,
-        dst_offset, c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
+        dst_offset, c_wait_for, num_wait_for,
+        NannyEvent._handle((src, dst))))
+    return NannyEvent._create(ptr_event[0])
 
 
 def _enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin,
@@ -2126,7 +2129,7 @@ def _enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin,
         _event, queue.ptr, mem.ptr, c_buf, buffer_origin, buffer_origin_l,
         host_origin, host_origin_l, region, region_l, buffer_pitches,
         buffer_pitches_l, host_pitches, host_pitches_l, c_wait_for,
-        num_wait_for, bool(is_blocking), NannyEvent._handle(hostbuf)))
+        num_wait_for, bool(is_blocking), NannyEvent._handle((hostbuf, mem))))
     return NannyEvent._create(_event[0])
 
 
@@ -2166,7 +2169,7 @@ def _enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin,
         _event, queue.ptr, mem.ptr, c_buf, buffer_origin, buffer_origin_l,
         host_origin, host_origin_l, region, region_l, buffer_pitches,
         buffer_pitches_l, host_pitches, host_pitches_l, c_wait_for,
-        num_wait_for, bool(is_blocking), NannyEvent._handle(hostbuf, c_ref)))
+        num_wait_for, bool(is_blocking), NannyEvent._handle((hostbuf, mem, c_ref))))
     return NannyEvent._create(_event[0])
 
 
@@ -2202,8 +2205,9 @@ def _enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region,
     _handle_error(_lib.enqueue_copy_buffer_rect(
         _event, queue.ptr, src.ptr, dst.ptr, src_origin, src_origin_l,
         dst_origin, dst_origin_l, region, region_l, src_pitches,
-        src_pitches_l, dst_pitches, dst_pitches_l, c_wait_for, num_wait_for))
-    return Event._create(_event[0])
+        src_pitches_l, dst_pitches, dst_pitches_l, c_wait_for, num_wait_for,
+        NannyEvent._handle((src, dst))))
+    return NannyEvent._create(_event[0])
 
 
 # PyPy bug report: https://bitbucket.org/pypy/pypy/issue/1777/unable-to-create-proper-numpy-array-from  # noqa
@@ -2234,8 +2238,8 @@ def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_fill_buffer(
         _event, queue.ptr, mem.ptr, c_pattern, psize, offset, size,
-        c_wait_for, num_wait_for))
-    return Event._create(_event[0])
+        c_wait_for, num_wait_for, NannyEvent._handle(mem)))
+    return NannyEvent._create(_event[0])
 
 # }}}
 
@@ -2258,7 +2262,7 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     _handle_error(_lib.enqueue_read_image(
         ptr_event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
-        bool(is_blocking), NannyEvent._handle(hostbuf)))
+        bool(is_blocking), NannyEvent._handle((hostbuf, mem))))
     return NannyEvent._create(ptr_event[0])
 
 
@@ -2276,8 +2280,9 @@ def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_copy_image(
         _event, queue.ptr, src.ptr, dest.ptr, src_origin, src_origin_l,
-        dest_origin, dest_origin_l, region, region_l, c_wait_for, num_wait_for))
-    return Event._create(_event[0])
+        dest_origin, dest_origin_l, region, region_l, c_wait_for, num_wait_for,
+        NannyEvent._handle((src, dest))))
+    return NannyEvent._create(_event[0])
 
 
 def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
@@ -2296,7 +2301,7 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     _handle_error(_lib.enqueue_write_image(
         _event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
-        bool(is_blocking), NannyEvent._handle(hostbuf, c_ref)))
+        bool(is_blocking), NannyEvent._handle((hostbuf, mem, c_ref))))
     return NannyEvent._create(_event[0])
 
 
@@ -2341,8 +2346,9 @@ def enqueue_fill_image(queue, img, color, origin, region, wait_for=None):
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_fill_image(_event, queue.ptr, img.ptr,
                                           c_color, origin, origin_l, region,
-                                          region_l, c_wait_for, num_wait_for))
-    return Event._create(_event[0])
+                                          region_l, c_wait_for, num_wait_for,
+                                          NannyEvent._handle(img)))
+    return NannyEvent._create(_event[0])
 
 
 def _enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset,
@@ -2359,8 +2365,9 @@ def _enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset,
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_copy_image_to_buffer(
         _event, queue.ptr, src.ptr, dest.ptr, origin, origin_l, region,
-        region_l, offset, c_wait_for, num_wait_for))
-    return Event._create(_event[0])
+        region_l, offset, c_wait_for, num_wait_for,
+        NannyEvent._handle((src, dest))))
+    return NannyEvent._create(_event[0])
 
 
 def _enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region,
@@ -2377,8 +2384,9 @@ def _enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region,
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_copy_buffer_to_image(
         _event, queue.ptr, src.ptr, dest.ptr, offset, origin, origin_l,
-        region, region_l, c_wait_for, num_wait_for))
-    return Event._create(_event[0])
+        region, region_l, c_wait_for, num_wait_for,
+        NannyEvent._handle((src, dest))))
+    return NannyEvent._create(_event[0])
 
 # }}}
 

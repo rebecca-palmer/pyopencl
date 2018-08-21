@@ -77,7 +77,7 @@ enqueue_write_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem,
 error*
 enqueue_copy_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
                     ptrdiff_t byte_count, size_t src_offset, size_t dst_offset,
-                    const clobj_t *_wait_for, uint32_t num_wait_for)
+                    const clobj_t *_wait_for, uint32_t num_wait_for, void *pyobj)
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto src = static_cast<memory_object*>(_src);
@@ -99,7 +99,7 @@ enqueue_copy_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueCopyBuffer, queue, src, dst, src_offset,
-                        dst_offset, byte_count, wait_for, event_out(evt));
+                        dst_offset, byte_count, wait_for, nanny_event_out(evt, pyobj));
                 });
         });
 }
@@ -108,7 +108,8 @@ enqueue_copy_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
 error*
 enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
                     size_t psize, size_t offset, size_t size,
-                    const clobj_t *_wait_for, uint32_t num_wait_for)
+                    const clobj_t *_wait_for, uint32_t num_wait_for,
+                    void *pyobj)
 {
 #if PYOPENCL_CL_VERSION >= 0x1020
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
@@ -118,7 +119,7 @@ enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
     return c_handle_retry_mem_error([&] {
             pyopencl_call_guarded(clEnqueueFillBuffer, queue, mem, pattern,
                                   psize, offset, size, wait_for,
-                                  event_out(evt));
+                                  nanny_event_out(evt, pyobj));
         });
 #else
     PYOPENCL_UNSUPPORTED(clEnqueueFillBuffer, "CL 1.1 and below")
@@ -195,7 +196,8 @@ enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
                          size_t dst_orig_l, const size_t *_reg, size_t reg_l,
                          const size_t *_src_pitches, size_t src_pitches_l,
                          const size_t *_dst_pitches, size_t dst_pitches_l,
-                         const clobj_t *_wait_for, uint32_t num_wait_for)
+                         const clobj_t *_wait_for, uint32_t num_wait_for,
+                         void *pyobj)
 {
 #if PYOPENCL_CL_VERSION >= 0x1010
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
@@ -211,7 +213,7 @@ enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
             pyopencl_call_guarded(
                 clEnqueueCopyBufferRect, queue, src, dst, src_orig, dst_orig,
                 reg, src_pitches[0], src_pitches[1], dst_pitches[0],
-                dst_pitches[1], wait_for, event_out(evt));
+                dst_pitches[1], wait_for, nanny_event_out(evt, pyobj));
         });
 #else
     PYOPENCL_UNSUPPORTED(clEnqueueCopyBufferRect, "CL 1.0")

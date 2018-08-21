@@ -139,7 +139,8 @@ enqueue_copy_image(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
                    const size_t *_src_orig, size_t src_orig_l,
                    const size_t *_dst_orig, size_t dst_orig_l,
                    const size_t *_reg, size_t reg_l,
-                   const clobj_t *_wait_for, uint32_t num_wait_for)
+                   const clobj_t *_wait_for, uint32_t num_wait_for,
+                   void *pyobj)
 {
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
@@ -150,7 +151,8 @@ enqueue_copy_image(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
     ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
     return c_handle_retry_mem_error([&] {
             pyopencl_call_guarded(clEnqueueCopyImage, queue, src, dst, src_orig,
-                                  dst_orig, reg, wait_for, event_out(evt));
+                                  dst_orig, reg, wait_for,
+                                  nanny_event_out(evt, pyobj));
         });
 }
 
@@ -178,7 +180,8 @@ error*
 enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
                    const void *color, const size_t *_orig, size_t orig_l,
                    const size_t *_reg, size_t reg_l,
-                   const clobj_t *_wait_for, uint32_t num_wait_for)
+                   const clobj_t *_wait_for, uint32_t num_wait_for,
+                   void *pyobj)
 {
 #if PYOPENCL_CL_VERSION >= 0x1020
     // TODO debug color
@@ -189,7 +192,7 @@ enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
     ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
     return c_handle_retry_mem_error([&] {
             pyopencl_call_guarded(clEnqueueFillImage, queue, img, color, orig,
-                                  reg, wait_for, event_out(evt));
+                                  reg, wait_for, nanny_event_out(evt, pyobj));
         });
 #else
     PYOPENCL_UNSUPPORTED(clEnqueueFillImage, "CL 1.1 and below")
@@ -202,7 +205,8 @@ error*
 enqueue_copy_image_to_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src,
                              clobj_t _dst, const size_t *_orig, size_t orig_l,
                              const size_t *_reg, size_t reg_l, size_t offset,
-                             const clobj_t *_wait_for, uint32_t num_wait_for)
+                             const clobj_t *_wait_for, uint32_t num_wait_for,
+                             void *pyobj)
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto src = static_cast<image*>(_src);
@@ -212,7 +216,8 @@ enqueue_copy_image_to_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src,
     ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
     return c_handle_retry_mem_error([&] {
             pyopencl_call_guarded(clEnqueueCopyImageToBuffer, queue, src, dst,
-                                  orig, reg, offset, wait_for, event_out(evt));
+                                  orig, reg, offset, wait_for,
+                                  nanny_event_out(evt, pyobj));
         });
 }
 
@@ -220,7 +225,8 @@ error*
 enqueue_copy_buffer_to_image(clobj_t *evt, clobj_t _queue, clobj_t _src,
                              clobj_t _dst, size_t offset, const size_t *_orig,
                              size_t orig_l, const size_t *_reg, size_t reg_l,
-                             const clobj_t *_wait_for, uint32_t num_wait_for)
+                             const clobj_t *_wait_for, uint32_t num_wait_for,
+                             void *pyobj)
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto src = static_cast<buffer*>(_src);
@@ -230,7 +236,8 @@ enqueue_copy_buffer_to_image(clobj_t *evt, clobj_t _queue, clobj_t _src,
     ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
     return c_handle_retry_mem_error([&] {
             pyopencl_call_guarded(clEnqueueCopyBufferToImage, queue, src, dst,
-                                  offset, orig, reg, wait_for, event_out(evt));
+                                  offset, orig, reg, wait_for,
+                                  nanny_event_out(evt, pyobj));
         });
 }
 

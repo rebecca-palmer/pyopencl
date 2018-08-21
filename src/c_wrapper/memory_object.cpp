@@ -100,7 +100,8 @@ error*
 enqueue_migrate_mem_objects(clobj_t *evt, clobj_t _queue,
                             const clobj_t *_mem_obj, uint32_t num_mem_obj,
                             cl_mem_migration_flags flags,
-                            const clobj_t *_wait_for, uint32_t num_wait_for)
+                            const clobj_t *_wait_for, uint32_t num_wait_for,
+                            void *pyobj)
 {
 #if PYOPENCL_CL_VERSION >= 0x1020
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
@@ -108,7 +109,8 @@ enqueue_migrate_mem_objects(clobj_t *evt, clobj_t _queue,
     auto queue = static_cast<command_queue*>(_queue);
     return c_handle_retry_mem_error([&] {
             pyopencl_call_guarded(clEnqueueMigrateMemObjects, queue,
-                                  mem_obj, flags, wait_for, event_out(evt));
+                                  mem_obj, flags, wait_for,
+                                  nanny_event_out(evt, pyobj));
         });
 #else
     PYOPENCL_UNSUPPORTED_BEFORE(clEnqueueMigrateMemObjects, "CL 1.2")

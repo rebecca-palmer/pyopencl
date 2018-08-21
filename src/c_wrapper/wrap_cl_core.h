@@ -149,7 +149,8 @@ error* enqueue_svm_memfill(
     clobj_t *evt, clobj_t _queue,
     void *svm_ptr,
     const void *pattern, size_t pattern_size, size_t size,
-    const clobj_t *_wait_for, uint32_t num_wait_for);
+    const clobj_t *_wait_for, uint32_t num_wait_for,
+    void *pyobj);
 error* enqueue_svm_map(
     clobj_t *evt, clobj_t _queue,
     cl_bool blocking_map, cl_map_flags map_flags,
@@ -165,7 +166,8 @@ error* enqueue_svm_migrate_mem(
     const void **svm_pointers,
     const size_t *sizes,
     cl_mem_migration_flags flags,
-    const clobj_t *_wait_for, uint32_t num_wait_for);
+    const clobj_t *_wait_for, uint32_t num_wait_for,
+    void *pyobj);
 
 // }}}
 
@@ -285,7 +287,8 @@ error *enqueue_barrier(clobj_t queue);
 error *enqueue_migrate_mem_objects(clobj_t *evt, clobj_t _queue,
                                    const clobj_t *_mem_obj, uint32_t,
                                    cl_mem_migration_flags flags,
-                                   const clobj_t *_wait_for, uint32_t num_wait_for);
+                                   const clobj_t *_wait_for, uint32_t num_wait_for,
+                                   void *pyobj);
 
 // }}}
 
@@ -298,7 +301,8 @@ error *enqueue_read_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
 error *enqueue_copy_buffer(clobj_t *event, clobj_t queue, clobj_t src,
                            clobj_t dst, ptrdiff_t byte_count,
                            size_t src_offset, size_t dst_offset,
-                           const clobj_t *wait_for, uint32_t num_wait_for);
+                           const clobj_t *wait_for, uint32_t num_wait_for,
+                           void *pyobj);
 error *enqueue_write_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                             const void *buffer, size_t size,
                             size_t device_offset, const clobj_t *wait_for,
@@ -311,7 +315,7 @@ error *enqueue_map_buffer(clobj_t *_evt, clobj_t *mpa, clobj_t _queue,
 error *enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                            void *pattern, size_t psize, size_t offset,
                            size_t size, const clobj_t *_wait_for,
-                           uint32_t num_wait_for);
+                           uint32_t num_wait_for, void *pyobj);
 error *enqueue_read_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem,
                                 void *buf, const size_t *_buf_orig,
                                 size_t buf_orig_l, const size_t *_host_orig,
@@ -339,7 +343,7 @@ error *enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
                                 size_t src_pitches_l,
                                 const size_t *_dst_pitches,
                                 size_t dst_pitches_l, const clobj_t *_wait_for,
-                                uint32_t num_wait_for);
+                                uint32_t num_wait_for, void *pyobj);
 
 // }}}
 
@@ -356,7 +360,7 @@ error *enqueue_copy_image(clobj_t *_evt, clobj_t _queue, clobj_t _src,
                           size_t src_origin_l, const size_t *_dst_origin,
                           size_t dst_origin_l, const size_t *_region,
                           size_t region_l, const clobj_t *_wait_for,
-                          uint32_t num_wait_for);
+                          uint32_t num_wait_for, void *pyobj);
 error *enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                            const size_t *origin, size_t origin_l,
                            const size_t *region, size_t region_l,
@@ -375,16 +379,18 @@ error *enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
                           const void *color, const size_t *_origin,
                           size_t origin_l, const size_t *_region,
                           size_t region_l, const clobj_t *_wait_for,
-                          uint32_t num_wait_for);
+                          uint32_t num_wait_for, void *pyobj);
 error *enqueue_copy_image_to_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src,
                                     clobj_t _dst, const size_t *_orig, size_t,
                                     const size_t *_reg, size_t, size_t offset,
-                                    const clobj_t *_wait_for, uint32_t);
+                                    const clobj_t *_wait_for, uint32_t,
+                                    void *pyobj);
 error *enqueue_copy_buffer_to_image(clobj_t *evt, clobj_t _queue, clobj_t _src,
                                     clobj_t _dst, size_t offset,
                                     const size_t *_orig, size_t,
                                     const size_t *_reg, size_t,
-                                    const clobj_t *_wait_for, uint32_t);
+                                    const clobj_t *_wait_for, uint32_t,
+                                    void *pyobj);
 
 // }}}
 
